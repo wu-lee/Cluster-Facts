@@ -1,0 +1,35 @@
+---
+abstract: 'define concise connection attributes'
+author:
+  - 'Nick Stokoe <npw@cpan.org>'
+build_requires:
+  Module::Build: 0.28
+configure_requires:
+  Module::Build: 0.28
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112580'
+keywords:
+  - cluster
+  - host
+  - connnection
+  - attributes
+  - facts
+license: artistic
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Cluster-Facts
+provides:
+  Cluster::Facts:
+    file: lib/Cluster/Facts.pm
+    version: v0.1.0
+  ConfigExpand:
+    file: lib/ConfigExpand.pm
+    version: 0
+requires:
+  Test::More: 0
+  version: 0.77
+resources:
+  license: http://opensource.org/licenses/artistic-license.php
+  repository: https://github.com/wu-lee/Cluster-Facts
+version: v0.1.0

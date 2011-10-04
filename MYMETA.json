@@ -1,0 +1,51 @@
+{
+   "abstract" : "define concise connection attributes",
+   "author" : [
+      "Nick Stokoe <npw@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.112580",
+   "keywords" : [
+      "cluster",
+      "host",
+      "connnection",
+      "attributes",
+      "facts"
+   ],
+   "license" : [
+      "artistic_1"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Cluster-Facts",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Module::Build" : "0.28"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.28"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Test::More" : 0,
+            "version" : "0.77"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://opensource.org/licenses/artistic-license.php"
+      ],
+      "repository" : {
+         "url" : "https://github.com/wu-lee/Cluster-Facts"
+      }
+   },
+   "version" : "v0.1.0"
+}
