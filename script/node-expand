@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use YAML::Tiny;
+use Getopt::Long qw(:config posix_default);
+use Carp qw(croak);
+use FindBin '$Bin';
+use lib "$Bin/../lib";
+use Text::Glob::Expand;
+use ConfigExpand qw(expand_attr_sets);
+
+######################################################################
+
+=for X
+
+sub expand_name {
+    my $name = shift;
+
+
+}
+
+sub expand {
+    my $config = shift;
+    my $credentials = $config->{credentials};
+    my $groups = $config->{groups};
+    my $hosts = $config->{hosts};
+
+    foreach my $name (keys %$hosts) {
+        my %names = explode_glob $name;
+        $address = delete $hosts->{$name};
+        my @addresses = map { expand_address $names{$_}, $address  } @names;
+    }
+
+    foreach my $alias (@_) {
+#        /^$(.*)/ and expand
+        
+    }
+}
+
+=cut
+
+
+
+######################################################################
+
+my $defs_file;
+GetOptions(
+    '--defs=s' => \$defs_file,
+)
+    or die "failed to parse options.  stopping.\n";
+
+
+my $yaml_stream = \*STDIN;
+
+
+if (defined $defs_file) {
+    die "No such file '$defs_file'. stopping.\n"
+        unless -f $defs_file;
+    require IO::File;
+    $yaml_stream = IO::File->new($defs_file)
+        or die "failed to open $defs_file: $!";
+}
+   
+
+my $yaml = do { local $/; <$yaml_stream> };
+my ($config) = YAML::Tiny::Load($yaml)
+    or die "failed to parse config: ", YAML::Tiny->errstr, "\n";
+
+
+my ($attributes, $groups) = @$config{qw(attributes groups)};
+
+use Data::Dumper;
+print Dumper $config;
+print Dumper expand_attr_sets($attributes);
