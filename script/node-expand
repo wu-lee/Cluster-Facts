@@ -8,7 +8,7 @@ use Carp qw(croak);
 use FindBin '$Bin';
 use lib "$Bin/../lib";
 use Text::Glob::Expand;
-use ConfigExpand qw(expand_attr_sets);
+use Cluster::Facts qw(expand_attr_sets);
 
 ######################################################################
 
