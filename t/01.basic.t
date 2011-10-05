@@ -9,7 +9,7 @@ use lib "$Bin/../lib";
 use Cluster::Facts qw(expand_attr_sets);
 
 use Test::Exception;
-use Test::More tests => 9;
+use Test::More tests => 16;
 
 my @cases = (
     [ "simple", <<CONFIG,
@@ -90,7 +90,7 @@ beta:
      f: 5
   - alpha
 CONFIG
-      qr{\QIn attribute set beta: failed to compose item #2: attributes already defined in 'alpha': 'a'\E},
+      qr{\QIn attribute set beta: failed to compose item #2: included attribute set 'alpha' would overwrite the existing attributes 'a'\E},
   ],
 
 
@@ -177,10 +177,108 @@ beta:
   - alpha
 
 CONFIG
-      qr{\QIn attribute set beta: failed to compose item #2: attributes already defined in 'alpha': 'foo1'\E},
-# FIXME this error message might be better worded
+      qr{\QIn attribute set beta: failed to compose item #2: included attribute set 'alpha' would overwrite the existing attributes 'foo1'\E},
   ],
  
+
+    [ "attribute set name with braces", <<CONFIG,
+---
+alpha{1,2,3}:
+  foo{1,2}: foo%1-server.co.uk
+
+CONFIG
+      {
+          alpha1 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+          },
+          alpha2 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+          },
+          alpha3 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+          },
+      },
+  ],
+
+    [ "attribute set name with braces which conflict", <<CONFIG,
+---
+alpha{1,2,2}:
+  foo{1,2}: foo%1-server.co.uk
+
+CONFIG
+      qr{\QThere are duplicate attribute set names after brace expansion: 'alpha2'\E},
+  ],
+
+    [ "attribute set name with braces which conflict 2", <<CONFIG,
+---
+alpha3:
+  blah: ~
+alpha{1,2,3}:
+  foo{1,2}: foo%1-server.co.uk
+
+CONFIG
+      qr{\QThere are duplicate attribute set names after brace expansion: 'alpha3'\E},
+  ],
+
+    [ "attribute set name with braces which conflict 3", <<CONFIG,
+---
+alpha{1,2,3}:
+  foo{1,2}: foo%1-server.co.uk
+alpha3:
+  blah: ~
+
+CONFIG
+      qr{\QThere are duplicate attribute set names after brace expansion: 'alpha3'\E},
+  ],
+
+
+    [ "attribute set name with braces which includes another", <<CONFIG,
+---
+alpha{1,2}:
+  foo{1,2}: foo%1-server.co.uk
+beta{1,2}:
+  - alpha1
+  - bar{1,2}: bar%1-server.co.uk
+
+CONFIG
+      {
+          alpha1 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+          },
+          alpha2 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+          },
+          beta1 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+              bar1 => 'bar1-server.co.uk',
+              bar2 => 'bar2-server.co.uk',
+          },
+          beta2 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+              bar1 => 'bar1-server.co.uk',
+              bar2 => 'bar2-server.co.uk',
+          },
+      },
+  ],
+
+    [ "attribute set name with braces which includes a duplicate pair", <<CONFIG,
+---
+alpha{1,2}:
+  foo{1,2}: foo%1-server.co.uk
+beta{1,2}:
+  - alpha{1,2}
+  - bar{1,2}: bar%1-server.co.uk
+
+CONFIG
+      qr/\Qfailed to compose item #1: the expansion of 'alpha{1,2}' defines duplicates of the attributes 'foo2' and 'foo1'\E/, 
+  ],
 );
 
 
@@ -197,7 +295,8 @@ foreach my $case (@cases) {
     }
     else {
         my $got = expand_attr_sets($config);
-        is_deeply $got, $expected, "$label: ok";
+        is_deeply $got, $expected, "$label: ok"
+            or note explain $got, $expected;
     }
 }
 

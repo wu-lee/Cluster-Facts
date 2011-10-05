@@ -16,10 +16,36 @@ sub _comma_and {
     return "'". join("' and '", join("', '", @_), $last). "'";
 }
 
+sub _is_glob {
+    # Are there any (possibly escaped) braces?
+    return unless
+        my @matches = shift =~ /([\\]*)[{]/g;
+
+    # Are any of these not escaped?
+    length($_) % 2 or return 1
+        for @matches;
+    
+    # Found none
+    return;
+}
+
+
 sub expand_attr_sets {
     my $attr_sets = shift;
 
+    # This memcaches a subroutine based on a single ref argument and a
+    # single ref return value.  The cache (%seen) only lasts as long as the
+    # closures in this method.
     my %seen;
+    my $memcache = sub {
+        my $original = shift;
+        return sub {
+            my $arg = shift;
+            return $seen{$arg} || ($seen{$arg} = $original->($arg));
+        };
+    };
+
+
 
     my $expand_simple_attrs = sub {
         my $attrs = shift;
@@ -36,8 +62,8 @@ sub expand_attr_sets {
         # expand (unescaped) braces
         my (@new_attrs, @new_values);
         foreach my $name (@names) {
-            next unless $name =~ /([\\]*)[{]/g;
-            next if length($1) % 2;
+            next 
+                if !_is_glob $name;
 
             my $value = delete $attrs->{$name};
 
@@ -65,35 +91,55 @@ sub expand_attr_sets {
     my $expand_attrs; # predeclaration
     my $append = sub {
         my ($to_append, $target) = @_;
-        my @new_attrs;
 
         if (ref \$to_append eq 'SCALAR') {
             # Append another named attribute set.  
-            my $name = $to_append;
-            $to_append = $attr_sets->{$name}; 
+            my $raw_name = $to_append;
+            my @names = $raw_name;
+            $to_append = {};
 
-            # We must expand it first (if it was not already).
-            $to_append = $expand_attrs->($to_append)
-                unless $seen{$name}++;
+            # Do we need to expand the name?
+            if (_is_glob $raw_name) {
+                # We do
+                my $exploded = Text::Glob::Expand->parse($raw_name)->explode;
+
+                @names = map { $_->text } @$exploded;
+            }
+
+            foreach my $name (@names) {
+                # Get the attribute set for this name
+                my $attr_set = $attr_sets->{$name}; 
+
+                # We must expand it first
+                $attr_set = $expand_attrs->($attr_set);
             
-            # Now we must warn if any of the attributes pre-exist in the target
-            @new_attrs = keys %$to_append;
-            my $preexisting = _comma_and grep { exists $target->{$_} } @new_attrs;
-            
-            die "attributes already defined in '$name': $preexisting\n"
-                if $preexisting;
+                # Now we must warn if any of the attributes pre-exist in the target
+                my @new_attrs = keys %$attr_set;
+                my $preexisting = _comma_and grep { exists $target->{$_} } @new_attrs;
+                
+                die "included attribute set '$name' would overwrite the existing attributes $preexisting\n"
+                    if $preexisting;
+
+                # And also if any of the attributes in other expansions coincide
+                $preexisting = _comma_and grep { exists $to_append->{$_} } @new_attrs;
+                
+                die "the expansion of '$raw_name' defines duplicates of the attributes $preexisting\n"
+                    if $preexisting;
+
+                # Queue them to be added
+                @$to_append{@new_attrs} = values %$attr_set;
+            }
         }
         elsif (ref $to_append eq 'HASH') {
             # Append a simple attribute set
             $to_append = $expand_simple_attrs->($to_append);
-            @new_attrs = keys %$to_append;
         }
         else {
             die "you can't nest lists inside lists within attributes\n";
         }
         
         # Actually do the append
-        @$target{@new_attrs} = values %$to_append;
+        @$target{keys %$to_append} = values %$to_append;
         return;
     };
 
@@ -122,13 +168,53 @@ sub expand_attr_sets {
             return \%result;
         }
         else {
-            die "attributes cannot be a scalar\n";
+            $attrs = defined $attrs? "'$attrs'" : '<undef>';
+            die "attributes must be an array or hash ref (not $attrs)\n";
         }
     };
-    
-    foreach my $name (keys %$attr_sets) {
-        next if $seen{$name}++; # avoid processing things twice
 
+    # wrap $expand_attrs to do memchaching
+    $expand_attrs = $memcache->($expand_attrs);
+
+    # Extract and expand names with braces first
+    if (my @globbing_names = grep { _is_glob $_ } keys %$attr_sets) {
+
+        my @new_names;
+        my @new_values;
+        foreach my $name (@globbing_names) {
+            my $attr_set = delete @$attr_sets{$name};
+            my $glob = Text::Glob::Expand->parse($name);
+            my $exploded = $glob->explode;
+            push @new_names, map { $_->text } @$exploded;
+
+            # Note, we don't expand the attribute set yet, it will
+            # cause problems if one of these globbed attribute set
+            # names tries to include another (which happens to be
+            # expanded afterwards).  Let the expansion happen 
+            # later.
+
+            # Store a reference to the expanded attribute set in each
+            # (we assume these won't be modified, so a reference is acceptable)
+            push @new_values, ($attr_set) x @new_names;
+        }
+
+        # Do any of the names coincide?
+        my %count;
+        $count{$_}++
+            for @new_names, keys %$attr_sets;
+
+        my $duplicates = _comma_and grep { $count{$_} > 1 } keys %count;
+
+        croak "There are duplicate attribute set names after brace expansion: $duplicates\n"
+            if $duplicates;
+
+        # All ok, add the new names back
+        @$attr_sets{@new_names} = @new_values;
+    }
+    
+
+    foreach my $name (keys %$attr_sets) {
+        
         eval {
             # Delete the unexpanded set first (to avoid self-recursive
             # definitions creating an infinite loop).
