@@ -5,6 +5,7 @@ use warnings;
 use YAML::Tiny;
 use Getopt::Long qw(:config posix_default);
 use Carp qw(croak);
+use List::Util qw(first);
 use FindBin '$Bin';
 use lib "$Bin/../lib";
 use Text::Glob::Expand;
@@ -49,44 +50,52 @@ sub format_node {
 
 ######################################################################
 
-my $defs_file;
-my $node_format = "%login:%password@%0:%%";
+
+my $config_path = first { -f } 
+    "$Bin/.node-expand.conf", 
+    "$ENV{USER}/.node-expand.conf",
+    "/etc/node-expand.conf";
+
+my $node_format = "%0 %login:%password@%0:%port";
 GetOptions(
-    '--defs=s' => \$defs_file,
+    '--config=s' => \$config_path,
     '--format=s' => \$node_format,
 )
     or die "failed to parse options.  stopping.\n";
 
 
-my $yaml_stream = \*STDIN;
-
-
-if (defined $defs_file) {
-    die "No such file '$defs_file'. stopping.\n"
-        unless -f $defs_file;
-    require IO::File;
-    $yaml_stream = IO::File->new($defs_file)
-        or die "failed to open $defs_file: $!";
+my $yaml_stream;
+if (defined $config_path) {
+    if ($config_path eq '-') {
+        $yaml_stream = \*STDIN;
+    }
+    elsif (!-f $config_path) {
+        die "No such file '$config_path'. stopping.\n";
+    }
+    else {
+        require IO::File;
+        $yaml_stream = IO::File->new($config_path)
+            or die "failed to open $config_path: $!";
+    }
 }
-   
+else {
+    die "no config file found and none specified with --config.  stopping.\n";
+}
 
 my $yaml = do { local $/; <$yaml_stream> };
+undef $yaml_stream; # This will close the stream if we opened it
+
 my ($config) = YAML::Tiny::Load($yaml)
     or die "failed to parse config: ", YAML::Tiny->errstr, "\n";
 
 
 my ($attributes, $groups) = @$config{qw(attributes groups)};
 
-use Data::Dumper;
-#print Dumper $config;
-#print Dumper 
+
 expand_attr_sets($attributes);
 
 
 my @nodes = expand_node_groups($attributes, $groups, @ARGV);
-
-#print Dumper {@nodes};
-
 
 while(my ($name, $attrs) = splice @nodes, 0, 2) {
     print format_node $node_format, $name, $attrs;
