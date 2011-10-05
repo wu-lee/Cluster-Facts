@@ -7,7 +7,7 @@ use Text::Glob::Expand;
 use version; our $VERSION = qv('0.1');
 
 use Exporter qw(import);
-our @EXPORT_OK = qw(expand_attr_sets);
+our @EXPORT_OK = qw(expand_attr_sets expand_node_groups);
 
 sub _comma_and {
     return '' unless @_;
@@ -231,6 +231,56 @@ sub expand_attr_sets {
     }
 
     return $attr_sets;
+}
+
+
+sub expand_node_groups {
+    my $nodes = shift;
+    my $groups = shift;
+    my $input = \@_;
+
+    my %seen; # record traversal, so that we don't get stuck in a loop
+
+    my $expand;
+    $expand = sub {
+        my @attr_sets;
+        foreach my $name (@_) {
+            next unless defined $name; # don't expand undef values
+
+            # Don't expand things we've seen already
+            next if $seen{$name}++;
+
+            # expand globs
+            if (_is_glob $name) {
+                my $exploded = Text::Glob::Expand->parse($name)->explode;
+                push @attr_sets, $expand->(map { $_->text } @$exploded);
+                next;
+            }
+
+            # use a node attribute set if possible
+            my $def = $nodes->{$name};
+            if ($def) {
+                push @attr_sets, $name => $def;
+                next;
+            }
+
+            # else try to recursively expand the name
+            croak "unknown group name '$name' in expansion of: @$input\n"
+                unless $def = $groups->{$name};
+
+            $def = [$def]
+                if ref $def eq 'SCALAR';
+
+            croak "group '$name' is not a scalar or a list, cannot expand it\n"
+                unless ref $def eq 'ARRAY';
+            
+            push @attr_sets, $expand->(@$def);
+        } 
+
+        return @attr_sets;
+    };
+
+    return $expand->(@_);
 }
 
 

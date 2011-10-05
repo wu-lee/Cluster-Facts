@@ -8,45 +8,52 @@ use Carp qw(croak);
 use FindBin '$Bin';
 use lib "$Bin/../lib";
 use Text::Glob::Expand;
-use Cluster::Facts qw(expand_attr_sets);
+use Cluster::Facts qw(expand_attr_sets expand_node_groups);
 
 ######################################################################
 
-=for X
+sub format_node {
+    my ($format, $name, $attrs) = @_;
 
-sub expand_name {
-    my $name = shift;
+    my @attr_names;
+    $format =~ 
+        s{
+              %
+              (?:
+                  %                 # an escaped percent
+              |
+                  (0)               # %0 stands for the attr set name
+              |
+                  ( [^\W\d][\w-]* ) # non-digit word char followed by word chars
+              |
+                  \{ ( [^\}]+ ) \}  # anything except braces
+              )
+         }
+         {
+             if (defined $1) {
+                 $name;
+             }
+             elsif (my $name = $2 || $3) {
+                 my $val = $attrs->{$name};
+                 croak "no such attribute '$name'"
+                     unless defined $val;
+                 $val;
+             }
+             else {
+                 '%'; # unescape escaped percents
+             }
+         }gex;
 
-
+    return $format;
 }
-
-sub expand {
-    my $config = shift;
-    my $credentials = $config->{credentials};
-    my $groups = $config->{groups};
-    my $hosts = $config->{hosts};
-
-    foreach my $name (keys %$hosts) {
-        my %names = explode_glob $name;
-        $address = delete $hosts->{$name};
-        my @addresses = map { expand_address $names{$_}, $address  } @names;
-    }
-
-    foreach my $alias (@_) {
-#        /^$(.*)/ and expand
-        
-    }
-}
-
-=cut
-
-
 
 ######################################################################
 
 my $defs_file;
+my $node_format = "%login:%password@%0:%%";
 GetOptions(
     '--defs=s' => \$defs_file,
+    '--format=s' => \$node_format,
 )
     or die "failed to parse options.  stopping.\n";
 
@@ -71,5 +78,20 @@ my ($config) = YAML::Tiny::Load($yaml)
 my ($attributes, $groups) = @$config{qw(attributes groups)};
 
 use Data::Dumper;
-print Dumper $config;
-print Dumper expand_attr_sets($attributes);
+#print Dumper $config;
+#print Dumper 
+expand_attr_sets($attributes);
+
+
+my @nodes = expand_node_groups($attributes, $groups, @ARGV);
+
+#print Dumper {@nodes};
+
+
+while(my ($name, $attrs) = splice @nodes, 0, 2) {
+    print format_node $node_format, $name, $attrs;
+    print "\n";
+}
+
+# 
+# node-expand yum2 -f "%name%password@%host:%port"
