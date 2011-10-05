@@ -38,6 +38,16 @@
          }
       }
    },
+   "provides" : {
+      "Cluster::Facts" : {
+         "file" : "lib/Cluster/Facts.pm",
+         "version" : "v0.1.0"
+      },
+      "ConfigExpand" : {
+         "file" : "lib/ConfigExpand.pm",
+         "version" : 0
+      }
+   },
    "release_status" : "stable",
    "resources" : {
       "license" : [
