@@ -332,7 +332,7 @@ sub expand_groups {
     $evaluate = sub {
         my %result;
         foreach my $term (@_) {
-            if ($term =~ s/\s*-\s*//) {
+            if ($term =~ s/^\s*-\s*//) {
                 # Subtract
                 delete @result{$expand->($term)};
             }
