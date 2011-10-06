@@ -325,7 +325,7 @@ sub expand_node_groups {
                 unless $def = $groups->{$name};
 
             $def = [$def]
-                if ref $def eq 'SCALAR';
+                if ref \$def eq 'SCALAR';
 
             croak "group '$name' is not a scalar or a list, cannot expand it\n"
                 unless ref $def eq 'ARRAY';
