@@ -243,6 +243,10 @@ beta{1,2}:
   - alpha1
   - bar{1,2}: bar%1-server.co.uk
 
+gamma{1,2}:
+  - beta1
+  - baz{1,2}: baz%1-server.co.uk
+
 CONFIG
       {
           alpha1 => {
@@ -264,6 +268,22 @@ CONFIG
               foo2 => 'foo2-server.co.uk',
               bar1 => 'bar1-server.co.uk',
               bar2 => 'bar2-server.co.uk',
+          },
+          gamma1 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+              bar1 => 'bar1-server.co.uk',
+              bar2 => 'bar2-server.co.uk',
+              baz1 => 'baz1-server.co.uk',
+              baz2 => 'baz2-server.co.uk',
+          },
+          gamma2 => {
+              foo1 => 'foo1-server.co.uk',
+              foo2 => 'foo2-server.co.uk',
+              bar1 => 'bar1-server.co.uk',
+              bar2 => 'bar2-server.co.uk',
+              baz1 => 'baz1-server.co.uk',
+              baz2 => 'baz2-server.co.uk',
           },
       },
   ],
