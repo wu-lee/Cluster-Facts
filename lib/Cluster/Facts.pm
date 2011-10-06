@@ -29,6 +29,62 @@ sub _is_glob {
     return;
 }
 
+sub serialize {
+    my ($name, $attrs) = @_;
+
+    # Order the values
+    my @values = ($name, map { $_ => $attrs->{$_} } sort keys %$attrs);
+
+    # Escape and quote these values
+    s/'/\\'/g, $_="'$_'"
+        for @values;
+
+    # Recombine as space-delimited pairs of 'a'='b', with the first
+    # pair being a special case of ='name'
+    unshift @values, '';
+    
+    my $string = join ' ', map { 
+        join '=', splice @values, 0, 2;
+    } 1..@values/2;
+
+    return $string;
+}
+
+# Split a string created by serialise_line into a name and an attribute-value list
+use Text::ParseWords qw(parse_line);
+sub deserialize {
+    my $line = shift;
+    my ($empty, $name, @values) = parse_line qr/\s*(=\s*|\s+)/, 0, $line;
+
+    # Perform some sanity checking
+    die "line does not start with '=': $line"
+        if length $empty;
+
+    die "uneven numbers of attributes in line: $line"
+        if @values % 2;
+
+    # Count each key's frequency whilst converting to a hash
+    my %counts;
+    my %attrs = map {
+        $counts{$values[0]}++;
+        splice @values, 0 ,2;
+    } 1..@values/2;
+
+    # collect (quoted) names of duplicates
+    my $duplicates = _comma_and map {
+        s/'/\\'/g; 
+        "'$_'";
+    } grep {
+        $counts{$_} > 1;
+    } keys %counts;
+    
+    die "duplicated keys $duplicates: $line"
+        if $duplicates;
+
+    return $name, \%attrs;
+}
+
+
 
 sub expand_attr_sets {
     my $attr_sets = shift;

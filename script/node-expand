@@ -13,7 +13,7 @@ use Cluster::Facts qw(expand_attr_sets expand_node_groups);
 
 ######################################################################
 
-sub format_node {
+sub format_attrs {
     my ($format, $name, $attrs) = @_;
 
     my @attr_names;
@@ -56,10 +56,20 @@ my $config_path = first { -f }
     "$ENV{USER}/.node-expand.conf",
     "/etc/node-expand.conf";
 
-my $node_format = "%0 %login:%password@%0:%port";
+
+
+my $attrs_serialiser = \&Cluster::Facts::serialize;
+
+
 GetOptions(
     '--config=s' => \$config_path,
-    '--format=s' => \$node_format,
+    '--format=s' => sub {
+        my (undef, $format) = @_;
+        # use format_attrs instead of serialise_attrs
+        $attrs_serialiser = sub {
+            format_attrs $format, @_;
+        };
+    }
 )
     or die "failed to parse options.  stopping.\n";
 
@@ -67,6 +77,7 @@ GetOptions(
 my $yaml_stream;
 if (defined $config_path) {
     if ($config_path eq '-') {
+        $config_path = 'standard input';
         $yaml_stream = \*STDIN;
     }
     elsif (!-f $config_path) {
@@ -85,9 +96,30 @@ else {
 my $yaml = do { local $/; <$yaml_stream> };
 undef $yaml_stream; # This will close the stream if we opened it
 
-my ($config) = YAML::Tiny::Load($yaml)
-    or die "failed to parse config: ", YAML::Tiny->errstr, "\n";
+my $config;
+{
+    eval {
+        ($config) = YAML::Tiny::Load($yaml);
 
+        # If we gete here, nothing threw an exception.  But if $config
+        # is not set, then this indicates an error, too.  However, we
+        # want to be able to distinguish these from croaks from
+        # YAML::Tiny and format them appropriately with information
+        # from $@ (if an exception) or YAML::Tiny->errstr (otherwise).
+        # (Yes, this is a PITA.  Why can't YAML::Tiny use one
+        # mechanism or the other?)
+        1;
+    }
+    or do {
+        my $err = ($@ || '');
+        ($err) = $err =~ /([^\n]+) at .*?$/m;
+        die "failed to parse config from $config_path: $err\n"
+    };
+    
+    # Handle the other sorts of error
+    die "failed to parse config file from $config_path: ", YAML::Tiny->errstr, "\n"
+        unless $config;
+}
 
 my ($attributes, $groups) = @$config{qw(attributes groups)};
 
@@ -98,7 +130,7 @@ expand_attr_sets($attributes);
 my @nodes = expand_node_groups($attributes, $groups, @ARGV);
 
 while(my ($name, $attrs) = splice @nodes, 0, 2) {
-    print format_node $node_format, $name, $attrs;
+    print $attrs_serialiser->($name, $attrs);
     print "\n";
 }
 
