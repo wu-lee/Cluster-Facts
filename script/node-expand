@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use YAML::Tiny;
-use Getopt::Long qw(:config posix_default);
+use Getopt::Long qw(:config gnu_compat);
 use Carp qw(croak);
 use List::Util qw(first);
 use FindBin '$Bin';
