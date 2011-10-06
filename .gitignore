@@ -13,3 +13,4 @@
 Makefile.PL
 Cluster-Facts-*
 /tmp
+/script/.node-expand.conf
