@@ -60,9 +60,10 @@ my $config_path = first { -f }
 
 my $attrs_serialiser = \&Cluster::Facts::serialize;
 
-
+my $locate_config;
 GetOptions(
     '--config=s' => \$config_path,
+    '--locate-config' => \$locate_config,
     '--format=s' => sub {
         my (undef, $format) = @_;
         # use format_attrs instead of serialise_attrs
@@ -72,6 +73,11 @@ GetOptions(
     }
 )
     or die "failed to parse options.  stopping.\n";
+
+if ($locate_config) {
+    print "config path is: $config_path\n";
+    exit 0;
+}
 
 
 my $yaml_stream;
