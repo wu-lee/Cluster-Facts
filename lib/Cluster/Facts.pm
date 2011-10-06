@@ -253,7 +253,7 @@ sub expand_attr_sets {
 
             # Store a reference to the expanded attribute set in each
             # (we assume these won't be modified, so a reference is acceptable)
-            push @new_values, ($attr_set) x @new_names;
+            push @new_values, ($attr_set) x @$exploded;
         }
 
         # Do any of the names coincide?
