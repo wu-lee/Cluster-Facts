@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use Carp qw(croak);
 use Text::Glob::Expand;
+use Text::Glob;
 
 use version; our $VERSION = qv('0.1');
 
@@ -20,6 +21,19 @@ sub _is_glob {
     # Are there any (possibly escaped) braces?
     return unless
         my @matches = shift =~ /([\\]*)[{]/g;
+
+    # Are any of these not escaped?
+    length($_) % 2 or return 1
+        for @matches;
+    
+    # Found none
+    return;
+}
+
+sub _is_wildcard {
+    # Are there any (possibly escaped) braces?
+    return unless
+        my @matches = $_[0] =~ /([\\]*)[{*\[?]/g;
 
     # Are any of these not escaped?
     length($_) % 2 or return 1
@@ -306,10 +320,10 @@ sub expand_groups {
 
         #print "expanding: $name\n";# DB
 
-        # expand globs
-        if (_is_glob $name) {
-            my $exploded = Text::Glob::Expand->parse($name)->explode;
-            return map { $expand->($_->text) } @$exploded;
+        # expand wildcard globs
+        if (_is_wildcard $name) {
+            my $rx = Text::Glob::glob_to_regex($name);
+            return grep /$rx/, keys %$attr_sets;
         }
 
         # use an attribute set if possible
