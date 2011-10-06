@@ -50,17 +50,19 @@ sub serialize {
     return $string;
 }
 
-# Split a string created by serialise_line into a name and an attribute-value list
+# Split a string created by serialise_line into a name and an
+# attribute-value list. Note, this function should *not* leak sensitive
+# information, yet alone include passwords in error messages!
 use Text::ParseWords qw(parse_line);
 sub deserialize {
     my $line = shift;
     my ($empty, $name, @values) = parse_line qr/\s*(=\s*|\s+)/, 0, $line;
 
     # Perform some sanity checking
-    die "line does not start with '=': $line"
+    die "line does not start with '='\n"
         if length $empty;
 
-    die "uneven numbers of attributes in line: $line"
+    die "number of attribute values does not match number of keys"
         if @values % 2;
 
     # Count each key's frequency whilst converting to a hash
@@ -78,7 +80,7 @@ sub deserialize {
         $counts{$_} > 1;
     } keys %counts;
     
-    die "duplicated keys $duplicates: $line"
+    die "duplicated keys\n"
         if $duplicates;
 
     return $name, \%attrs;
