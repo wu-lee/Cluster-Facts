@@ -305,6 +305,8 @@ sub expand_node_groups {
         foreach my $name (@_) {
             next unless defined $name; # don't expand undef values
 
+            #print "expanding: $name\n";# DB
+
             # Don't expand things we've seen already
             next if $seen{$name}++;
 
