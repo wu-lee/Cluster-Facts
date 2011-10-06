@@ -297,8 +297,6 @@ sub expand_groups {
     my $groups = shift;
     my $input = \@_; # for errors
 
-#    my %seen; # record traversal, so that we don't get stuck in a loop
-
     my ($expand, $evaluate);
 
     # expand an unsigned name
