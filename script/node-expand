@@ -9,7 +9,7 @@ use List::Util qw(first);
 use FindBin '$Bin';
 use lib "$Bin/../lib";
 use Text::Glob::Expand;
-use Cluster::Facts qw(expand_attr_sets expand_node_groups);
+use Cluster::Facts qw(expand_attr_sets expand_attr_groups);
 
 ######################################################################
 
@@ -133,9 +133,9 @@ my ($attributes, $groups) = @$config{qw(attributes groups)};
 expand_attr_sets($attributes);
 
 
-my @nodes = expand_node_groups($attributes, $groups, @ARGV);
+my @names = expand_attr_groups($attributes, $groups, @ARGV);
 
-while(my ($name, $attrs) = splice @nodes, 0, 2) {
+while(my ($name, $attrs) = splice @attr_sets, 0, 2) {
     print $attrs_serialiser->($name, $attrs);
     print "\n";
 }
