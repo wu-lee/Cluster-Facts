@@ -60,7 +60,7 @@ CONFIG
           
       ],
   ],
-    [ "simple", <<CONFIG,
+    [ "wildcards (not groups)", <<CONFIG,
 ---
 attributes:
   a1:
