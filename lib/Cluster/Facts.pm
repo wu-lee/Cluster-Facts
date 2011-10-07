@@ -4,6 +4,7 @@ use strict;
 use Carp qw(croak);
 use Text::Glob::Expand;
 use Text::Glob;
+use Text::ParseWords qw(parse_line);
 
 use version; our $VERSION = qv('0.1');
 
@@ -67,7 +68,6 @@ sub serialize {
 # Split a string created by serialise_line into a name and an
 # attribute-value list. Note, this function should *not* leak sensitive
 # information, yet alone include passwords in error messages!
-use Text::ParseWords qw(parse_line);
 sub deserialize {
     my $line = shift;
     my ($empty, $name, @values) = parse_line qr/\s*(=\s*|\s+)/, 0, $line;
