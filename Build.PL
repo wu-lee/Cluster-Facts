@@ -47,6 +47,8 @@ my $builder = Module::Build->new
      {
       'Test::More' => 0,
       'version'    => 0.77,
+      'Text::Glob' => 0,
+      'Text::Glob::Expand' => 0,
      },
      recommends => 
      {
