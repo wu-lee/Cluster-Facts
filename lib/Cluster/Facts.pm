@@ -88,8 +88,8 @@ sub deserialize {
 
     # collect (quoted) names of duplicates
     my $duplicates = _comma_and map {
-        s/'/\\'/g; 
-        "'$_'";
+        (my $name = $_) =~ s/'/\\'/g; 
+        "'$name'";
     } grep {
         $counts{$_} > 1;
     } keys %counts;
