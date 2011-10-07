@@ -6,7 +6,7 @@ MANIFEST			This list of files
 META.json
 META.yml
 README
-script/node-expand
+script/enlist
 t/00.load.t
 t/01.pod.t
 t/01.expand_attr_sets.t

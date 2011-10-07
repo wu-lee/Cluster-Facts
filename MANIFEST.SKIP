@@ -20,4 +20,4 @@ CVS
 ^nytprof^MYMETA\.yml$
 ^MYMETA\.json$
 ^MYMETA\.yml$
-^script/\.node-expand\.conf$
+^script/\.enlist\.conf$

@@ -52,9 +52,9 @@ sub format_attrs {
 
 
 my $config_path = first { -f } 
-    "$Bin/.node-expand.conf", 
-    "$ENV{USER}/.node-expand.conf",
-    "/etc/node-expand.conf";
+    "$Bin/.enlist.conf", 
+    "$ENV{USER}/.enlist.conf",
+    "/etc/enlist.conf";
 
 
 
@@ -140,6 +140,3 @@ foreach my $name (@names) {
     print $attrs_serialiser->($name, $attrs);
     print "\n";
 }
-
-# 
-# node-expand yum2 -f "%name%password@%host:%port"
