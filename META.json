@@ -34,6 +34,8 @@
       "runtime" : {
          "requires" : {
             "Test::More" : 0,
+            "Text::Glob" : 0,
+            "Text::Glob::Expand" : 0,
             "version" : "0.77"
          }
       }

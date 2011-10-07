@@ -1,5 +1,5 @@
 {
-   "abstract" : "define concise connection attributes",
+   "abstract" : "define concise connection attributes, list named subsets",
    "author" : [
       "Nick Stokoe <npw@cpan.org>"
    ],
@@ -34,6 +34,8 @@
       "runtime" : {
          "requires" : {
             "Test::More" : 0,
+            "Text::Glob" : 0,
+            "Text::Glob::Expand" : 0,
             "version" : "0.77"
          }
       }
