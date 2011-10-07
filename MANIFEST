@@ -8,7 +8,8 @@ META.yml
 README
 script/node-expand
 t/00.load.t
-t/01.basic.t
 t/01.pod.t
+t/01.expand_attr_sets.t
+t/01.expand_groups.t
 xt/01.perlcritic.t
 xt/01.pod-coverage.t

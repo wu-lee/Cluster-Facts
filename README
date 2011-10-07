@@ -1,5 +1,6 @@
 NAME
-    Cluster::Facts - define concise connection attributes
+    Cluster::Facts - define concise connection attributes, list named
+    subsets
 
 VERSION
     This document describes Cluster::Facts version 0.1

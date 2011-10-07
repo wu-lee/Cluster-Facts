@@ -1,5 +1,5 @@
 {
-   "abstract" : "define concise connection attributes",
+   "abstract" : "define concise connection attributes, list named subsets",
    "author" : [
       "Nick Stokoe <npw@cpan.org>"
    ],
