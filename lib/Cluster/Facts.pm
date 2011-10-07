@@ -369,7 +369,7 @@ __END__
 
 =head1 NAME
 
-Cluster::Facts - define concise connection attributes
+Cluster::Facts - define concise connection attributes, list named subsets
 
 
 =head1 VERSION
