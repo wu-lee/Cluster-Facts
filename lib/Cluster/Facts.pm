@@ -11,6 +11,9 @@ use version; our $VERSION = qv('0.1');
 use Exporter qw(import);
 our @EXPORT_OK = qw(expand_attr_sets expand_groups);
 
+# If true, wildcards will match groups and attribute sets; otherwise it just matches attribute sets.
+our $WILDCARD_GROUPS; 
+
 sub _comma_and {
     return '' unless @_;
     my $last = pop;
@@ -323,7 +326,15 @@ sub expand_groups {
         # expand wildcard globs
         if (_is_wildcard $name) {
             my $rx = Text::Glob::glob_to_regex($name);
-            return grep /$rx/, keys %$attr_sets;
+            my @results = grep /^$rx$/, keys %$attr_sets;
+
+            if ($WILDCARD_GROUPS) {
+                # recursively match and expand the groups.
+                my @groups = grep /^$rx$/, keys %$groups;
+                push @results, map { $expand->($_) } @groups;
+            }
+
+            return @results;
         }
 
         # use an attribute set if possible
@@ -342,6 +353,20 @@ sub expand_groups {
             
         return $evaluate->(@$expr);
     };
+
+    # recursion detecting wrapper
+
+    my %seen;
+    my $original_expand = $expand;
+    $expand = sub {
+        my $name = shift;
+        #print "expanding $name\n"; # DB
+        my @result = $original_expand->($name)
+            unless $seen{$name}++;
+        delete $seen{$name};
+        return @result;
+    };
+
 
     $evaluate = sub {
         my %result;

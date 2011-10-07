@@ -81,7 +81,33 @@ CONFIG
           alpha1 => [qw(a1 b1 c1)],
       ],
   ],
-  
+); 
+
+my @cases_todo = (
+    [ "wildcards (incl. groups)", <<CONFIG,
+---
+attributes:
+  a1:
+  a2:
+  b1:
+  b2:
+  c1:
+  c3:
+  aa1:
+  another:
+groups:
+  aX: a?
+# This includes all groups and names beginning with 'a'!
+  aXX: a*
+  alpha1: '[a-z]1'
+CONFIG
+      [
+          aX => [qw(a1 a2)],
+          aXX => [qw(a1 a2 aa1 another b1 c1)],
+          alpha1 => [qw(a1 b1 c1)],
+      ],
+  ],
+
 );
 
 
